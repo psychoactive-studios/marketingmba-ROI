@@ -1,0 +1,159 @@
+$(document).ready(function(){
+	$('.date-picker').flatpickr();
+	$('#calculate_roi').click( function(){
+		var currency_symbols = { 'EUR': "€", 'USD': "$", 'GBP': "£", 'AED': "د.إ" },
+			$that 					= $(this),
+			amount_invested 		= $('#amount_invested').attr('data-val'),
+			returned_amount 		= $('#returned_amount').attr('data-val'),
+			duration_type 			= $('#duration_type').val();
+			if( duration_type == 'length' ){
+				duration_of_project 	= $('#dop').val();
+				time_unit 				= $('#time_unit_length').val();				
+			}else{
+				time_unit 				= $('#time_unit_date').val();
+				start_date 				= $('#start_Date').val();	
+				enddate 				= $('#end_date').val();
+				if( "" !== enddate && "" !== start_date ){
+					days				= Site.dateDiffinDays( start_date, enddate );
+					switch ( time_unit ) {
+						case "days":
+							duration_of_project = days;
+							break;
+						case "months":
+							duration_of_project = days / 30 ;
+							break;
+						case "years":
+							duration_of_project = days / 365 ;
+					}
+					duration_of_project = Math.round(duration_of_project)
+				}else{
+					duration_of_project		= 0;
+				}						
+			}		
+			target_annualized_roi 	= $('#target_annualized_roi').val(),
+			time_needed_unit 		= $('#time_needed_unit').val(),
+			currency 				= $('#currency').val(),
+			
+			data 					= { 
+				'amount_invested' 		: amount_invested, 
+				'returned_amount' 		: returned_amount, 
+				'duration_of_project' 	: duration_of_project, 
+				'time_unit' 			: time_unit, 
+				'target_annualized_roi' : target_annualized_roi, 
+				'time_needed_unit' 		: time_needed_unit,
+				'currency'				: currency,
+				'currency_symbol'		: currency_symbols[currency],
+				'duration_type'			: duration_type
+			};
+			
+		calculated_data = Site.Calculator( data );
+		Site.setData( calculated_data );			
+		return false;
+	});
+	
+	$('.roi_tab').click( function(){
+		var $that = $(this),
+			type = $that.attr('data-type');
+		$('#duration_type').val(type);
+		$('.roi_tab').removeClass('checked');
+		$that.addClass('checked');
+		$('.roi_tab_content').removeClass('hide');
+		
+		if( type == 'length' ){
+			$('.use_date_wrap').addClass('hide');
+		}else{
+			$('.use_length_wrap').addClass('hide');
+		}
+		
+		return false;
+	});
+	
+	$('.currency_field').on( "focus", function(){
+		val = $(this).attr('data-val');
+		$(this).val( val );
+	});
+	$('.currency_field').on( "keyup", function(){
+		val = $(this).val();
+		$(this).attr('data-val', val);		
+	});
+	$(document).on( "blur load", '.currency_field', function(){
+		val 			= $(this).attr('data-val');
+		currency 		= $('#currency').val()
+		formated_val 	= Site.formatCurrencyField( val, currency );
+		$(this).val(formated_val);		
+	});
+	
+});
+
+var Site = {
+	Calculator: function( data ){
+		console.log( data );
+		var gain_or_loss 	= ( data.returned_amount - data.amount_invested ),
+			roi 			= ( gain_or_loss / data.amount_invested ) * 100,
+			annualized_roi 	= '',
+			time_needed  	= '';
+			
+		data.gain_or_loss 	= gain_or_loss;
+		data.roi			= roi;
+			
+			
+		if( data.time_unit == 'years' ){
+			day_no 			= 1;
+		}else if( data.time_unit == 'months' ){
+			day_no 			= 12;
+		}else if( data.time_unit == 'days' ){
+			day_no 			= 365;
+		}
+		
+		if( data.time_needed_unit == 'years' ){
+			needed_day_no 	= 1;
+		}else if( data.time_needed_unit == 'months' ){
+			needed_day_no 	= 12;
+		}else if( data.time_needed_unit == 'days' ){
+			needed_day_no 	= 365;
+		}
+		
+		data.annualized_roi 		= ( data.duration_of_project ) ? (  day_no * roi  / data.duration_of_project ) : 0;
+		data.time_needed 			= ( ( data.target_annualized_roi / roi ) * needed_day_no );		
+			
+		return data;
+	},
+	setData: function( data ){
+		$('#gain_or_loss').html( Site.formatCurrencyField( data.gain_or_loss, data.currency ) );
+		$('#roi').html( Math.ceil( data.roi )+'%' );
+		$('#annualized_roi').html(Site.formatNumberField ( Math.round( data.annualized_roi ) )+'%' );
+		$('#time_needed').html( Site.formatNumberField( Site.format_number( data.time_needed, 1 ) ) );
+		$('.currency_symbol').html( data.currency_symbol );
+	},
+	
+	format_number: function( data, points ){
+		return data.toFixed(points).replace(/(\d)(?=(\d{3})+\.)/g, "$1,");
+	},
+	
+	dateDiffinDays: function( date1, date2 ){
+		date1 = new Date( date1 );  
+		date2 = new Date( date2 );  
+		
+		//calculate time difference  
+		var time_difference = date2.getTime() - date1.getTime();  
+		
+		//calculate days difference by dividing total milliseconds in a day  
+		var days_difference = time_difference / (1000 * 60 * 60 * 24);  
+		
+		return days_difference;
+	},
+	
+	formatCurrencyField: function( val, currency ){		
+		 var formated_val = new Intl.NumberFormat( 'de-DE' , {
+			style: "currency",
+			currency: currency
+		}).format(val);
+		return formated_val;
+	},
+	
+	formatNumberField: function( val ){		
+		 var formated_val = new Intl.NumberFormat( 'de-DE' , {
+		}).format(val);
+		return formated_val;
+	}
+}
