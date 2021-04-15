@@ -1,3 +1,26 @@
+body {
+  direction: ltr;
+}
+::-webkit-scrollbar {
+  width: 0.5vw; /* Controls the overall width of the scrollbar */
+  padding: 10px; /* Controls the padding of the Scrollbar */
+}
+/* Track - This is the part that contains the bit you click and drag */
+::-webkit-scrollbar-track {
+  background: #ffffff; /* Sets the background to transparent, change to a Hex or RGB value if you would like */
+}
+/* Handle - This is the bit you actually click and drag */
+::-webkit-scrollbar-thumb {
+  background: #c30017; /* Change the Hex value to change the scroll handle */
+  border-radius: 0px;
+}
+::selection {
+  background: #ec1b35; /* WebKit/Blink Browsers */
+  color: white;
+}
+::-moz-selection {
+  background: #ec1b35; /* Gecko Browsers */
+}
 img {
   max-width: 100%;
   height: auto;
